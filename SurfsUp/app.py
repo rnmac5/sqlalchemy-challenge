@@ -36,31 +36,27 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"/api/v1.0/percipitation<br/>"
+        f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/<start><br/>"
         f"/api/v1.0/<start>/<end>")
  
  
-@app.route("/api/v1.0/percipitation")
-def percipitation():
+@app.route("/api/v1.0/precipitation")
+def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
  
-    """Return a list of all percipitation"""
-    # Query all passengers
-    year_ago = dt.date(2017,8,23) - dt.timedelta(days=365)
+    """Return a list of all precipitation"""
+    # Query all with the year ago date and precipitation
+    year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
     result = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= year_ago).all()
  
- 
+    session.close()
+
     # Convert list of tuples into normal list
-    all_prcp = []
-    for date,prcp in result:
-        weather_dict = {}
-        weather_dict["date"] = date
-        weather_dict["prcp"] = prcp
-        all_prcp.append(weather_dict) 
+    all_prcp = {date: prcp for date, prcp in result} 
     
     return jsonify(all_prcp)
  
@@ -71,13 +67,12 @@ def stations():
     # Create our session (link) from Python to the DB
     session = Session(engine)
  
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
-    # Query all passengers
+    # Query all stations
     stations = session.query(Station.station).all()
  
     session.close()
  
-    # Create a dictionary from the row data and append to a list of all_passengers
+    # Create a dictionary from the row data and append to a list of all_stations
     all_stations = list(np.ravel(stations))
  
     return jsonify(all_stations)
@@ -88,8 +83,8 @@ def tobs():
     # Create our session (link) from Python to the DB
     session = Session(engine)
  
-    """Return a list of all passenger names"""
-    # Query all passengers
+    """Return a list of all tobs"""
+    # Query all tobs
     year_ago = dt.date(2017,8,23) - dt.timedelta(days=365)
     tobs = session.query(Measurement.date, Measurement.tobs)\
     .filter(Measurement.station == 'USC00519281')\
@@ -102,14 +97,33 @@ def tobs():
  
     return jsonify(all_tobs)
 
+@app.route("/api/v1.0/<start>")
+@app.route("/api/v1.0/<start>/<end>")
+def dates(start= None, end= None):
+    #Create our session from Python
+    session = Session(engine)
 
+    #Set up the functions for min, avg and max
+    select= [func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+
+    #Query the functions
+    if not end:
+        final_result= session.query(*select).\
+            filter(Measurement.date >= start).all()
+        final_tobs= list(np.ravel(final_result))
+        return jsonify(final_tobs)
+    final_result= session.query(*select).\
+        filter(Measurement.date >=start).\
+        filter(Measurement.date <=end).all()
+    final_tobs= list(np.ravel(final_result))
+    return jsonify(final_tobs=final_tobs)
+
+    
 
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
 
 
 
