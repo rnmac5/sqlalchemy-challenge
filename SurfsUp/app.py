@@ -40,7 +40,8 @@ def welcome():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>")
+        f"/api/v1.0/<start>/<end>"
+        f"<p>'start' and 'end' date should be in YYYY-MM-DD")
  
  
 @app.route("/api/v1.0/precipitation")
@@ -119,8 +120,6 @@ def dates(start= None, end= None):
     return jsonify(final_tobs=final_tobs)
 
     
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
